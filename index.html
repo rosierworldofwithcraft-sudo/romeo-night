@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังสินค้า Romeo Night</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Kanit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+        }
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.15); }
+        }
+        .online-dot {
+            animation: pulse-green 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- ================= 0. LOGIN OVERLAY (FULL SCREEN) ================= -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center p-4">
+        <!-- Background Glow FX -->
+        <div class="absolute w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="bg-slate-900/90 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl relative backdrop-blur-md space-y-6">
+            
+            <!-- Logo & Header -->
+            <div class="text-center space-y-2">
+                <div class="inline-flex p-4 bg-indigo-600/20 text-indigo-400 rounded-2xl border border-indigo-500/30 mb-2">
+                    <i class="fa-solid fa-shield-halved text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold tracking-wide text-white">Romeo Night System</h2>
+                <p class="text-xs text-slate-400">กรุณาเข้าสู่ระบบเพื่อใช้งานคลังสินค้า</p>
+            </div>
+
+            <!-- Login Form -->
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                
+                <!-- Error Alert Box -->
+                <div id="login-error" class="hidden p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-lg text-xs flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span id="login-error-text">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!</span>
+                </div>
+
+                <!-- Username Input -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="login-user" required placeholder="เช่น Romeo Night" class="w-full bg-slate-950 text-slate-100 pl-9 pr-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500 text-sm transition">
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">รหัสผ่าน (Password)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="password" id="login-pass" required placeholder="•••••" class="w-full bg-slate-950 text-slate-100 pl-9 pr-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500 text-sm transition font-mono">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 mt-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
+                </button>
+            </form>
+
+            <div class="text-center text-[11px] text-slate-500 border-t border-slate-800 pt-4">
+                Romeo Night Inventory System &copy; Secure Terminal
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP SYSTEM (HIDDEN UNTIL LOGIN) ================= -->
+    <div id="main-app" class="hidden min-h-screen flex flex-col">
+        
+        <!-- Header Section -->
+        <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-lg">
+            <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                
+                <!-- Branding -->
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                        <i class="fa-solid font-bold fa-warehouse text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl font-bold tracking-wide text-white">คลังของ Romeo Night</h1>
+                            <!-- Online Status Badge -->
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 online-dot"></span>
+                                Online
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                            <i class="fa-solid fa-phone text-slate-500"></i> เบอร์โทรศัพท์: <span class="font-mono font-semibold text-slate-300">43519</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs & Logout Button -->
+                <div class="flex items-center gap-3">
+                    <nav class="flex bg-slate-900/80 p-1 rounded-xl border border-slate-700/60">
+                        <button id="btn-tab-stock" onclick="switchTab('stock')" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md">
+                            <i class="fa-solid fa-boxes-stacked"></i> สต๊อกสินค้า
+                        </button>
+                        <button id="btn-tab-calc" onclick="switchTab('calc')" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-white">
+                            <i class="fa-solid fa-calculator"></i> คำนวณราคา
+                        </button>
+                    </nav>
+
+                    <!-- Logout Button -->
+                    <button onclick="handleLogout()" title="ออกจากระบบ" class="p-2 bg-slate-900 hover:bg-rose-600/20 text-slate-400 hover:text-rose-400 rounded-xl border border-slate-700 hover:border-rose-500/30 transition">
+                        <i class="fa-solid fa-power-off text-base"></i>
+                    </button>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
+
+            <!-- ================= PAGE 1: STOCK MANAGEMENT ================= -->
+            <section id="page-stock" class="space-y-6">
+                
+                <!-- Controls Header: Add Button & Search -->
+                <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
+                    <div class="relative flex-grow max-w-md">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="onSearchInput()" placeholder="ค้นหารายการสินค้า..." class="w-full bg-slate-900 text-slate-100 pl-9 pr-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-indigo-500 text-sm">
+                    </div>
+                    <button onclick="openModal('add')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30">
+                        <i class="fa-solid fa-circle-plus"></i> เพิ่มรายการสินค้า
+                    </button>
+                </div>
+
+                <!-- Overview Cards (Bank + Stats) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    
+                    <!-- BANK BALANCE CARD -->
+                    <div class="bg-gradient-to-br from-amber-950/40 via-slate-800/90 to-slate-800/80 p-4 rounded-xl border border-amber-500/30 shadow-lg flex flex-col justify-between">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-amber-400 font-medium">ยอดเงินในธนาคาร</p>
+                                <div class="flex items-baseline gap-1 mt-1">
+                                    <span id="stat-bank-balance" class="text-2xl font-bold font-mono text-amber-300">0</span>
+                                    <span class="text-xs text-amber-400/80">฿</span>
+                                </div>
+                            </div>
+                            <div class="p-2.5 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">
+                                <i class="fa-solid fa-building-columns text-xl"></i>
+                            </div>
+                        </div>
+                        <!-- Quick Bank Actions -->
+                        <div class="flex items-center gap-1.5 mt-3 pt-2 border-t border-amber-500/20">
+                            <button onclick="adjustBank('deposit')" class="flex-1 py-1 px-2 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded text-xs font-medium transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-plus text-[10px]"></i> ฝาก
+                            </button>
+                            <button onclick="adjustBank('withdraw')" class="flex-1 py-1 px-2 bg-rose-600/80 hover:bg-rose-500 text-white rounded text-xs font-medium transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-minus text-[10px]"></i> ถอน
+                            </button>
+                            <button onclick="adjustBank('set')" class="py-1 px-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs font-medium transition" title="แก้ไขยอดโดยตรง">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TOTAL ITEMS CARD -->
+                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400">รายการสินค้าทั้งหมด</p>
+                            <p id="stat-total-items" class="text-2xl font-bold text-white mt-1">0</p>
+                        </div>
+                        <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg"><i class="fa-solid fa-boxes-packing text-2xl"></i></div>
+                    </div>
+
+                    <!-- TOTAL IN CARD -->
+                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400">นำเข้าสะสม</p>
+                            <p id="stat-total-in" class="text-2xl font-bold text-emerald-400 mt-1">0</p>
+                        </div>
+                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg"><i class="fa-solid fa-arrow-down-to-bracket text-2xl"></i></div>
+                    </div>
+
+                    <!-- TOTAL OUT CARD -->
+                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400">เบิกออกสะสม</p>
+                            <p id="stat-total-out" class="text-2xl font-bold text-rose-400 mt-1">0</p>
+                        </div>
+                        <div class="p-3 bg-rose-500/10 text-rose-400 rounded-lg"><i class="fa-solid fa-arrow-up-from-bracket text-2xl"></i></div>
+                    </div>
+
+                </div>
+
+                <!-- Stock Table Container -->
+                <div class="bg-slate-800/80 rounded-xl border border-slate-700/60 overflow-hidden shadow-xl flex flex-col">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase tracking-wider border-b border-slate-700">
+                                    <th class="p-4">ชื่อสินค้า</th>
+                                    <th class="p-4 text-center">นำเข้า (In)</th>
+                                    <th class="p-4 text-center">ออกไป (Out)</th>
+                                    <th class="p-4 text-center">คงเหลือ (Stock)</th>
+                                    <th class="p-4 text-center">ปรับสต๊อกด่วน</th>
+                                    <th class="p-4 text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-tbody" class="divide-y divide-slate-700/50 text-sm">
+                                <!-- Items will be generated dynamically here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="empty-state" class="hidden p-8 text-center text-slate-500">
+                        <i class="fa-solid fa-inbox text-4xl mb-2"></i>
+                        <p>ยังไม่มีข้อมูลสินค้า กด "เพิ่มรายการสินค้า" เพื่อเริ่มบันทึก</p>
+                    </div>
+
+                    <!-- Pagination Footer Bar -->
+                    <div id="pagination-container" class="bg-slate-900/60 px-4 py-3 border-t border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+                        <div>
+                            แสดงข้อมูล <span id="page-start" class="font-medium text-slate-200">0</span> - <span id="page-end" class="font-medium text-slate-200">0</span> จากทั้งหมด <span id="page-total" class="font-medium text-slate-200">0</span> รายการ
+                        </div>
+                        <div id="page-buttons" class="flex items-center gap-1">
+                            <!-- Pagination buttons generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= PAGE 2: PRICE CALCULATOR ================= -->
+            <section id="page-calc" class="hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Input Controls Section -->
+                    <div class="lg:col-span-5 bg-slate-800/80 p-6 rounded-xl border border-slate-700/60 space-y-5 shadow-xl">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-700 pb-3">
+                            <i class="fa-solid fa-sliders text-indigo-400"></i> กำหนดราคาสินค้า & จำนวน
+                        </h2>
+
+                        <!-- Load from stock dropdown -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">เลือกจากสต๊อก (ตัวเลือกเสริม):</label>
+                            <select id="calc-item-select" onchange="autoFillCalcItem()" class="w-full bg-slate-900 text-slate-100 px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-indigo-500 text-sm">
+                                <option value="">-- ป้อนข้อมูลเอง หรือเลือกรายการ --</option>
+                            </select>
+                        </div>
+
+                        <!-- Item Name -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อรายการ/สินค้า:</label>
+                            <input type="text" id="calc-name" placeholder="เช่น แร่เหล็ก, อาวุธ, ยา" class="w-full bg-slate-900 text-slate-100 px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-indigo-500 text-sm">
+                        </div>
+
+                        <!-- Market Price -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">ราคาตลาด (ต่อชิ้น):</label>
+                            <div class="relative">
+                                <input type="number" min="0" id="calc-market" oninput="calculateAll()" placeholder="0" class="w-full bg-slate-900 text-slate-100 pl-3 pr-8 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-indigo-500 text-sm font-mono">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">฿</span>
+                            </div>
+                        </div>
+
+                        <!-- Buy & Sell Rate -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-emerald-400 mb-1">อัตรารับซื้อ (ต่อชิ้น):</label>
+                                <input type="number" min="0" id="calc-buy" oninput="calculateAll()" placeholder="0" class="w-full bg-slate-900 text-slate-100 px-3 py-2 rounded-lg border border-emerald-500/40 focus:outline-none focus:border-emerald-500 text-sm font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-indigo-400 mb-1">ราคาเสนอขาย (ต่อชิ้น):</label>
+                                <input type="number" min="0" id="calc-sell" oninput="calculateAll()" placeholder="0" class="w-full bg-slate-900 text-slate-100 px-3 py-2 rounded-lg border border-indigo-500/40 focus:outline-none focus:border-indigo-500 text-sm font-mono font-bold">
+                            </div>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div>
+                            <label class="block text-xs font-medium text-amber-400 mb-1">จำนวนชิ้น:</label>
+                            <input type="number" min="1" id="calc-qty" value="1" oninput="calculateAll()" class="w-full bg-slate-900 text-slate-100 px-3 py-2 rounded-lg border border-amber-500/40 focus:outline-none focus:border-amber-500 text-sm font-mono font-bold">
+                        </div>
+
+                        <button onclick="resetCalc()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate-left"></i> ล้างข้อมูลการคำนวณ
+                        </button>
+                    </div>
+
+                    <!-- Display Calculations Result -->
+                    <div class="lg:col-span-7 bg-slate-800/80 p-6 rounded-xl border border-slate-700/60 flex flex-col justify-between shadow-xl">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-700 pb-3 mb-5">
+                                <i class="fa-solid fa-chart-pie text-emerald-400"></i> ผลการคำนวณทั้งหมด
+                            </h2>
+
+                            <div class="space-y-4">
+                                <!-- Market Value total -->
+                                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                                    <div>
+                                        <p class="text-xs text-slate-400">มูลค่าตลาดรวม (Market Total)</p>
+                                        <p class="text-xs text-slate-500">ราคาตลาด × จำนวน</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span id="res-market-total" class="text-2xl font-bold font-mono text-slate-200">0</span>
+                                        <span class="text-xs text-slate-400"> ฿</span>
+                                    </div>
+                                </div>
+
+                                <!-- Total Buy Cost -->
+                                <div class="bg-emerald-950/20 p-4 rounded-xl border border-emerald-500/30 flex justify-between items-center">
+                                    <div>
+                                        <p class="text-xs text-emerald-400 font-medium">ยอดเงินรวมฝั่ง "รับซื้อ" (Total Buy)</p>
+                                        <p class="text-xs text-slate-500">ทุนที่เราต้องจ่ายออกไปซื้อ</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span id="res-buy-total" class="text-2xl font-bold font-mono text-emerald-400">0</span>
+                                        <span class="text-xs text-emerald-400"> ฿</span>
+                                    </div>
+                                </div>
+
+                                <!-- Total Sell Value -->
+                                <div class="bg-indigo-950/20 p-4 rounded-xl border border-indigo-500/30 flex justify-between items-center">
+                                    <div>
+                                        <p class="text-xs text-indigo-400 font-medium">ยอดเงินรวมฝั่ง "ขายออก" (Total Sell)</p>
+                                        <p class="text-xs text-slate-500">รายรับที่เราจะได้รับ</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span id="res-sell-total" class="text-2xl font-bold font-mono text-indigo-400">0</span>
+                                        <span class="text-xs text-indigo-400"> ฿</span>
+                                    </div>
+                                </div>
+
+                                <!-- Margin / Profit estimate -->
+                                <div class="bg-amber-950/20 p-4 rounded-xl border border-amber-500/30 flex justify-between items-center">
+                                    <div>
+                                        <p class="text-xs text-amber-400 font-medium">กำไรคาดการณ์ / ส่วนต่าง (Profit Margin)</p>
+                                        <p class="text-xs text-slate-500">ขายออก - รับซื้อ</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span id="res-profit" class="text-2xl font-bold font-mono text-amber-400">0</span>
+                                        <span class="text-xs text-amber-400"> ฿</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Note -->
+                        <div class="mt-6 p-3 bg-slate-900/40 rounded-lg text-xs text-slate-400 border border-slate-700/40 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-indigo-400"></i>
+                            <span>ระบบบันทึกค่าการคำนวณล่าสุดไว้แบบเรียลไทม์ ปิดเว็บแล้วเปิดใหม่ข้อมูลยังคงอยู่</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 border-t border-slate-800 text-center py-4 text-xs text-slate-500">
+            &copy; Romeo Night Inventory Management System — Tel: 43519
+        </footer>
+    </div>
+
+    <!-- Modal Form (Add / Edit Stock Item) -->
+    <div id="item-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 id="modal-title" class="text-base font-bold text-white">เพิ่มรายการใหม่</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <input type="hidden" id="modal-item-id">
+            
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อรายการ *</label>
+                <input type="text" id="modal-name" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">จำนวนนำเข้า (In)</label>
+                    <input type="number" min="0" id="modal-in" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">จำนวนออกไป (Out)</label>
+                    <input type="number" min="0" id="modal-out" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">ราคาตลาดอ้างอิง</label>
+                    <input type="number" min="0" id="modal-market" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">ราคาซื้อ/ขายเฉลี่ย</label>
+                    <input type="number" min="0" id="modal-price" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-xs font-medium">ยกเลิก</button>
+                <button onclick="saveItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium">บันทึกข้อมูล</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Storage Keys
+        const STORAGE_KEY_AUTH = 'romeo_night_auth_logged_v1';
+        const STORAGE_KEY_ITEMS = 'romeo_night_stock_items_v1';
+        const STORAGE_KEY_CALC = 'romeo_night_calc_state_v1';
+        const STORAGE_KEY_BANK = 'romeo_night_bank_balance_v1';
+
+        // Credentials Configuration
+        const VALID_USER = "romeo night";
+        const VALID_PASS = "43519";
+
+        // Pagination Settings
+        const ITEMS_PER_PAGE = 10;
+        let currentPage = 1;
+
+        // Bank Balance State
+        let bankBalance = Number(localStorage.getItem(STORAGE_KEY_BANK)) || 0;
+
+        // Initial Data Structure
+        let items = JSON.parse(localStorage.getItem(STORAGE_KEY_ITEMS)) || [
+            { id: '1', name: 'กระสุนปืน 9มม.', inQty: 500, outQty: 120, marketPrice: 150, sellPrice: 180 },
+            { id: '2', name: 'ชุดปฐมพยาบาล', inQty: 50, outQty: 15, marketPrice: 500, sellPrice: 600 }
+        ];
+
+        let calcState = JSON.parse(localStorage.getItem(STORAGE_KEY_CALC)) || {
+            name: '',
+            market: '',
+            buy: '',
+            sell: '',
+            qty: 1
+        };
+
+        // Check Authentication Status on Page Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const isAuth = localStorage.getItem(STORAGE_KEY_AUTH);
+            if (isAuth === 'true') {
+                showMainApp();
+            } else {
+                showLoginScreen();
+            }
+        });
+
+        // Authentication Handlers
+        function handleLogin(e) {
+            e.preventDefault();
+            const userInput = document.getElementById('login-user').value.trim().toLowerCase();
+            const passInput = document.getElementById('login-pass').value.trim();
+            const errorBox = document.getElementById('login-error');
+
+            if (userInput === VALID_USER && passInput === VALID_PASS) {
+                errorBox.classList.add('hidden');
+                localStorage.setItem(STORAGE_KEY_AUTH, 'true');
+                showMainApp();
+            } else {
+                errorBox.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+                localStorage.removeItem(STORAGE_KEY_AUTH);
+                showLoginScreen();
+            }
+        }
+
+        function showLoginScreen() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+        }
+
+        function showMainApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            // Render App Data
+            renderBankBalance();
+            renderStock();
+            initCalcState();
+            populateCalcSelectOptions();
+        }
+
+        // Bank Adjustments
+        function renderBankBalance() {
+            document.getElementById('stat-bank-balance').innerText = bankBalance.toLocaleString();
+            localStorage.setItem(STORAGE_KEY_BANK, bankBalance.toString());
+        }
+
+        function adjustBank(type) {
+            if (type === 'deposit') {
+                const amount = prompt('กรอกจำนวนเงินที่ต้องการฝาก:');
+                if (amount !== null && !isNaN(amount) && Number(amount) > 0) {
+                    bankBalance += Number(amount);
+                    renderBankBalance();
+                }
+            } else if (type === 'withdraw') {
+                const amount = prompt('กรอกจำนวนเงินที่ต้องการถอน:');
+                if (amount !== null && !isNaN(amount) && Number(amount) > 0) {
+                    bankBalance -= Number(amount);
+                    renderBankBalance();
+                }
+            } else if (type === 'set') {
+                const amount = prompt('ตั้งค่ายอดเงินในธนาคารใหม่:', bankBalance);
+                if (amount !== null && !isNaN(amount) && amount.trim() !== '') {
+                    bankBalance = Number(amount);
+                    renderBankBalance();
+                }
+            }
+        }
+
+        // Tab Switching Logic
+        function switchTab(tab) {
+            const pageStock = document.getElementById('page-stock');
+            const pageCalc = document.getElementById('page-calc');
+            const btnStock = document.getElementById('btn-tab-stock');
+            const btnCalc = document.getElementById('btn-tab-calc');
+
+            if (tab === 'stock') {
+                pageStock.classList.remove('hidden');
+                pageCalc.classList.add('hidden');
+                btnStock.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md";
+                btnCalc.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-white";
+            } else {
+                pageStock.classList.add('hidden');
+                pageCalc.classList.remove('hidden');
+                btnCalc.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md";
+                btnStock.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-white";
+                populateCalcSelectOptions();
+            }
+        }
+
+        // Real-time Save Items
+        function saveItemsToStorage() {
+            localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(items));
+            populateCalcSelectOptions();
+        }
+
+        function onSearchInput() {
+            currentPage = 1;
+            renderStock();
+        }
+
+        // Render Stock Table & Statistics with Pagination
+        function renderStock() {
+            const tbody = document.getElementById('stock-tbody');
+            const emptyState = document.getElementById('empty-state');
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+
+            tbody.innerHTML = '';
+
+            const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchVal));
+
+            // Update Header Stats
+            let totalIn = 0;
+            let totalOut = 0;
+            items.forEach(i => {
+                totalIn += Number(i.inQty || 0);
+                totalOut += Number(i.outQty || 0);
+            });
+            document.getElementById('stat-total-items').innerText = items.length.toLocaleString();
+            document.getElementById('stat-total-in').innerText = totalIn.toLocaleString();
+            document.getElementById('stat-total-out').innerText = totalOut.toLocaleString();
+
+            if (filteredItems.length === 0) {
+                emptyState.classList.remove('hidden');
+                renderPagination(0, 0, 0);
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Calculate Pagination
+            const totalItems = filteredItems.length;
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+            const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+            paginatedItems.forEach(item => {
+                const balance = (item.inQty || 0) - (item.outQty || 0);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-700/30 transition border-b border-slate-700/40";
+
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-white flex flex-col">
+                        <span>${escapeHtml(item.name)}</span>
+                        <span class="text-xs text-slate-400">ตลาด: ${Number(item.marketPrice || 0).toLocaleString()}฿ | ขาย: ${Number(item.sellPrice || 0).toLocaleString()}฿</span>
+                    </td>
+                    <td class="p-4 text-center font-mono text-emerald-400">+${Number(item.inQty).toLocaleString()}</td>
+                    <td class="p-4 text-center font-mono text-rose-400">-${Number(item.outQty).toLocaleString()}</td>
+                    <td class="p-4 text-center">
+                        <span class="inline-block px-3 py-1 rounded-full text-xs font-bold font-mono ${balance < 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'}">
+                            ${balance.toLocaleString()}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <div class="inline-flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700">
+                            <button onclick="quickAdjust('${item.id}', 'out', 1)" title="เบิกออก 1" class="px-2 py-1 text-xs bg-rose-600/80 hover:bg-rose-500 text-white rounded transition">-1</button>
+                            <span class="text-xs px-1 text-slate-400">เบิก/เข้า</span>
+                            <button onclick="quickAdjust('${item.id}', 'in', 1)" title="รับเข้า 1" class="px-2 py-1 text-xs bg-emerald-600/80 hover:bg-emerald-500 text-white rounded transition">+1</button>
+                        </div>
+                    </td>
+                    <td class="p-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="openModal('edit', '${item.id}')" class="p-2 text-slate-400 hover:text-indigo-400 transition" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteItem('${item.id}')" class="p-2 text-slate-400 hover:text-rose-400 transition" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderPagination(startIndex + 1, endIndex, totalItems, totalPages);
+        }
+
+        // Render Pagination Controls
+        function renderPagination(start, end, total, totalPages) {
+            document.getElementById('page-start').innerText = total === 0 ? 0 : start;
+            document.getElementById('page-end').innerText = end;
+            document.getElementById('page-total').innerText = total;
+
+            const btnContainer = document.getElementById('page-buttons');
+            btnContainer.innerHTML = '';
+
+            if (total === 0) return;
+
+            // Prev Button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = `px-3 py-1.5 rounded-lg border border-slate-700 transition ${currentPage === 1 ? 'text-slate-600 border-slate-800 cursor-not-allowed' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`;
+            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left text-xs"></i>';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderStock(); } };
+            btnContainer.appendChild(prevBtn);
+
+            // Page Numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                if (i === currentPage) {
+                    pageBtn.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold shadow";
+                } else {
+                    pageBtn.className = "px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition";
+                }
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => { currentPage = i; renderStock(); };
+                btnContainer.appendChild(pageBtn);
+            }
+
+            // Next Button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = `px-3 py-1.5 rounded-lg border border-slate-700 transition ${currentPage === totalPages ? 'text-slate-600 border-slate-800 cursor-not-allowed' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`;
+            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right text-xs"></i>';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderStock(); } };
+            btnContainer.appendChild(nextBtn);
+        }
+
+        // Quick adjust stock
+        function quickAdjust(id, type, amount) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            if (type === 'in') {
+                item.inQty = (Number(item.inQty) || 0) + amount;
+            } else if (type === 'out') {
+                item.outQty = (Number(item.outQty) || 0) + amount;
+            }
+            saveItemsToStorage();
+            renderStock();
+        }
+
+        // Modal Controls
+        function openModal(mode, id = null) {
+            const modal = document.getElementById('item-modal');
+            const title = document.getElementById('modal-title');
+            
+            if (mode === 'add') {
+                title.innerText = "เพิ่มรายการใหม่";
+                document.getElementById('modal-item-id').value = '';
+                document.getElementById('modal-name').value = '';
+                document.getElementById('modal-in').value = 0;
+                document.getElementById('modal-out').value = 0;
+                document.getElementById('modal-market').value = '';
+                document.getElementById('modal-price').value = '';
+            } else {
+                title.innerText = "แก้ไขรายการสินค้า";
+                const item = items.find(i => i.id === id);
+                if (!item) return;
+                document.getElementById('modal-item-id').value = item.id;
+                document.getElementById('modal-name').value = item.name;
+                document.getElementById('modal-in').value = item.inQty;
+                document.getElementById('modal-out').value = item.outQty;
+                document.getElementById('modal-market').value = item.marketPrice || '';
+                document.getElementById('modal-price').value = item.sellPrice || '';
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('item-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveItem() {
+            const id = document.getElementById('modal-item-id').value;
+            const name = document.getElementById('modal-name').value.trim();
+            const inQty = Number(document.getElementById('modal-in').value) || 0;
+            const outQty = Number(document.getElementById('modal-out').value) || 0;
+            const marketPrice = Number(document.getElementById('modal-market').value) || 0;
+            const sellPrice = Number(document.getElementById('modal-price').value) || 0;
+
+            if (!name) {
+                alert('กรุณากรอกชื่อสินค้า');
+                return;
+            }
+
+            if (id) {
+                // Edit
+                const item = items.find(i => i.id === id);
+                if (item) {
+                    item.name = name;
+                    item.inQty = inQty;
+                    item.outQty = outQty;
+                    item.marketPrice = marketPrice;
+                    item.sellPrice = sellPrice;
+                }
+            } else {
+                // Add
+                const newItem = {
+                    id: Date.now().toString(),
+                    name,
+                    inQty,
+                    outQty,
+                    marketPrice,
+                    sellPrice
+                };
+                items.push(newItem);
+            }
+
+            saveItemsToStorage();
+            renderStock();
+            closeModal();
+        }
+
+        function deleteItem(id) {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+                items = items.filter(i => i.id !== id);
+                saveItemsToStorage();
+                renderStock();
+            }
+        }
+
+        // ================= CALCULATOR LOGIC =================
+
+        function populateCalcSelectOptions() {
+            const select = document.getElementById('calc-item-select');
+            select.innerHTML = '<option value="">-- ป้อนข้อมูลเอง หรือเลือกรายการ --</option>';
+            items.forEach(i => {
+                const opt = document.createElement('option');
+                opt.value = i.id;
+                opt.textContent = `${i.name} (คงเหลือ: ${i.inQty - i.outQty})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function autoFillCalcItem() {
+            const selectVal = document.getElementById('calc-item-select').value;
+            if (!selectVal) return;
+
+            const item = items.find(i => i.id === selectVal);
+            if (item) {
+                document.getElementById('calc-name').value = item.name;
+                document.getElementById('calc-market').value = item.marketPrice || 0;
+                document.getElementById('calc-sell').value = item.sellPrice || 0;
+                document.getElementById('calc-buy').value = Math.round((item.sellPrice || 0) * 0.8);
+                calculateAll();
+            }
+        }
+
+        function initCalcState() {
+            document.getElementById('calc-name').value = calcState.name || '';
+            document.getElementById('calc-market').value = calcState.market || '';
+            document.getElementById('calc-buy').value = calcState.buy || '';
+            document.getElementById('calc-sell').value = calcState.sell || '';
+            document.getElementById('calc-qty').value = calcState.qty || 1;
+            calculateAll();
+        }
+
+        function calculateAll() {
+            const name = document.getElementById('calc-name').value;
+            const market = Number(document.getElementById('calc-market').value) || 0;
+            const buy = Number(document.getElementById('calc-buy').value) || 0;
+            const sell = Number(document.getElementById('calc-sell').value) || 0;
+            const qty = Number(document.getElementById('calc-qty').value) || 0;
+
+            const marketTotal = market * qty;
+            const buyTotal = buy * qty;
+            const sellTotal = sell * qty;
+            const profit = sellTotal - buyTotal;
+
+            document.getElementById('res-market-total').innerText = marketTotal.toLocaleString();
+            document.getElementById('res-buy-total').innerText = buyTotal.toLocaleString();
+            document.getElementById('res-sell-total').innerText = sellTotal.toLocaleString();
+            document.getElementById('res-profit').innerText = profit.toLocaleString();
+
+            // Save state in real-time
+            calcState = { name, market, buy, sell, qty };
+            localStorage.setItem(STORAGE_KEY_CALC, JSON.stringify(calcState));
+        }
+
+        function resetCalc() {
+            document.getElementById('calc-item-select').value = '';
+            document.getElementById('calc-name').value = '';
+            document.getElementById('calc-market').value = '';
+            document.getElementById('calc-buy').value = '';
+            document.getElementById('calc-sell').value = '';
+            document.getElementById('calc-qty').value = 1;
+            calculateAll();
+        }
+
+        // Helper Utility
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+    </script>
+</body>
+</html>
